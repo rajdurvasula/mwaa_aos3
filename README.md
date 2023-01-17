@@ -3,8 +3,8 @@
 This CDK project will deploy following AWS Services/Resources in `us-east-1` AWS region:
 - VPC
 - EKS Cluster
-  - PlatformTeam with Cluster Admin RBAC role
-  - EmrEksTeam with RBAC role for lauching virtual cluster on EKS
+  - `PlatformTeam` with Cluster Admin RBAC role
+  - `EmrEksTeam` with RBAC role for launching virtual cluster on EKS
 - EMR virtual cluster
 
 ## Modules/Libraries
