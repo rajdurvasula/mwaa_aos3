@@ -1,0 +1,64 @@
+# Account env vars
+export ACCOUNT_ID=466323227181
+export AWS_REGION=us-east-1
+
+# job without logging
+aws emr-containers start-job-run --virtual-cluster-id=$VIRTUAL_CLUSTER_ID --name=pi-2 --execution-role-arn=arn:aws:iam::466323227181:role/emr-containers-jobexec-role-us-east-1-rd-cluster --release-label=emr-6.8.0-latest --job-driver='{
+"sparkSubmitJobDriver": {
+"entryPoint": "local:///usr/lib/spark/examples/src/main/python/pi.py",
+"sparkSubmitParameters": "--conf spark.executor.instances=1 --conf spark.executor.memory=2G --conf spark.executor.cores=1 --conf spark.driver.cores=1"
+}
+}'
+
+# job with logging
+export LOG_GROUP_NAME=/emr-on-eks/rd-cluster
+
+# Create Log Group
+aws logs create-log-group --log-group-name=$LOG_GROUP_NAME
+
+# Create S3 Bucket
+export S3_DEMO_BUCKET=s3://rd-cluster-${ACCOUNT_ID}-${AWS_REGION}
+aws s3 mb $S3_DEMO_BUCKET
+
+# Launch Spark Pi job with logging
+export VIRTUAL_CLUSTER_ID=3ea2ox31pr4rr7pjidv7srsq0
+export EMR_ROLE_ARN=arn:aws:iam::466323227181:role/emr-containers-jobexec-role-us-east-1-rd-cluster
+
+# file: spark_pi_job_logging.json
+cat > spark_pi_job_logging.json <<EOF
+{
+    "name": "pi-4",
+    "virtualClusterId": "${VIRTUAL_CLUSTER_ID}",
+    "executionRoleArn": "${EMR_ROLE_ARN}",
+    "releaseLabel": "emr-6.8.0-latest",
+    "jobDriver": {
+        "sparkSubmitJobDriver": {
+            "entryPoint": "local:///usr/lib/spark/examples/src/main/python/pi.py",
+            "sparkSubmitParameters": "--conf spark.executor.instances=2 --conf spark.executor.memory=2G --conf spark.executor.cores=2 --conf spark.driver.cores=1"
+        }
+    },
+    "configurationOverrides": {
+        "applicationConfiguration": [
+            {
+                "classification": "spark-defaults",
+                "properties": {
+                  "spark.dynamicAllocation.enabled": "false",
+                  "spark.kubernetes.executor.deleteOnTermination": "true"
+                }
+            }
+        ],
+        "monitoringConfiguration": {
+            "cloudWatchMonitoringConfiguration": {
+                "logGroupName": "${LOG_GROUP_NAME}",
+                "logStreamNamePrefix": "pi"
+            },
+            "s3MonitoringConfiguration": {
+                "logUri": "${S3_DEMO_BUCKET}/"
+            }
+        }
+    }
+}
+EOF
+
+aws emr-containers start-job-run --cli-input-json file://spark_pi_job_logging.json
+

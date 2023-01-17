@@ -1,0 +1,32 @@
+{
+    "name": "pi-4",
+    "virtualClusterId": "3ea2ox31pr4rr7pjidv7srsq0",
+    "executionRoleArn": "arn:aws:iam::466323227181:role/emr-containers-jobexec-role-us-east-1-rd-cluster",
+    "releaseLabel": "emr-6.8.0-latest",
+    "jobDriver": {
+        "sparkSubmitJobDriver": {
+            "entryPoint": "local:///usr/lib/spark/examples/src/main/python/pi.py",
+            "sparkSubmitParameters": "--conf spark.executor.instances=1 --conf spark.executor.memory=2G --conf spark.executor.cores=2 --conf spark.driver.cores=1"
+        }
+    },
+    "configurationOverrides": {
+        "applicationConfiguration": [
+            {
+                "classification": "spark-defaults",
+                "properties": {
+                  "spark.dynamicAllocation.enabled": "false",
+                  "spark.kubernetes.executor.deleteOnTermination": "true"
+                }
+            }
+        ],
+        "monitoringConfiguration": {
+            "cloudWatchMonitoringConfiguration": {
+                "logGroupName": "/emr-on-eks/rd-cluster",
+		"logStreamNamePrefix": "pi"
+            },
+            "s3MonitoringConfiguration": {
+                "logUri": "s3://rd-cluster-466323227181-us-east-1/"
+            }
+        }
+    }
+}
